@@ -7,6 +7,8 @@ class Solution:
     def twoSum(self, nums: List[int], target: int) -> List[int]:
         nums_index_map = {}
         for i in range(len(nums)):
+            # 同じ数字がnumsに含まれている場合を考えて, valueをlistにしたほうが良かったのではとAcceptしたあとに思ったが, 
+            # 組み合わせは1通りでいいので, dictには同じ数字の一番最後のindexだけ記録しておけばいいと気づいた.
             nums_index_map[nums[i]] = i
 
         for i in range(len(nums)):
