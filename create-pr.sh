@@ -49,7 +49,7 @@ echo "🔀 PRを作成中..."
 gh pr create \
   --base main \
   --head "$CURRENT_BRANCH" \
-  --title "Solve: ${PROBLEM_TITLE}" \
+  --title "${PROBLEM_TITLE}" \
   --body-file .github/pull_request_template.md
 
 echo "✅ PR作成完了！"

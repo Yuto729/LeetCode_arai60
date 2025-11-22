@@ -49,14 +49,11 @@ jobs:
           cat << EOF > message.txt
           お疲れ様です。
           
-          ${PROBLEM_NAME}に取り組みました。
-          
+          ${PROBLEM_NAME}に取り組みました。  
           お手隙の際にレビューをお願いいたします。
           
-          問題: ${PROBLEM_URL}
-          
-          PR: ${PR_URL}
-          
+          問題: ${PROBLEM_URL} 
+          PR: ${PR_URL} 
           言語: Python3
           EOF
           
