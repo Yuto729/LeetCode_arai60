@@ -1,0 +1,63 @@
+name: Notify Discord on PR
+
+on:
+  pull_request:
+    types: [opened]
+    branches:
+      - main
+
+jobs:
+  notify:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.ref }}
+
+      - name: Extract problem info
+        id: extract
+        run: |
+          # PRテンプレートから問題情報を抽出
+          PROBLEM_LINE=$(sed -n '2p' .github/pull_request_template.md)
+          PROBLEM_NAME=$(echo "$PROBLEM_LINE" | sed -n 's/.*\[\(.*\)\].*/\1/p')
+          PROBLEM_URL=$(echo "$PROBLEM_LINE" | sed -n 's/.*(\(.*\)).*/\1/p')
+          
+          echo "problem_name=${PROBLEM_NAME}" >> $GITHUB_OUTPUT
+          echo "problem_url=${PROBLEM_URL}" >> $GITHUB_OUTPUT
+
+      - name: Create Discord message and post as PR comment
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          PR_NUMBER="${{ github.event.pull_request.number }}"
+          PR_URL="${{ github.event.pull_request.html_url }}"
+          PR_AUTHOR="${{ github.event.pull_request.user.login }}"
+          PROBLEM_NAME="${{ steps.extract.outputs.problem_name }}"
+          PROBLEM_URL="${{ steps.extract.outputs.problem_url }}"
+          
+          # Discordメッセージを作成
+          cat > message.txt << 'END_OF_MESSAGE'
+          お疲れ様です。
+          
+          ${PROBLEM_NAME}に取り組みました。
+          
+          お手隙の際にレビューをお願いいたします。
+          
+          問題: ${PROBLEM_URL}
+          
+          PR: ${PR_URL}
+          
+          言語: Python3
+          END_OF_MESSAGE
+          
+          # 変数を置換
+          sed -i "s|\${PROBLEM_NAME}|${PROBLEM_NAME}|g" message.txt
+          sed -i "s|\${PROBLEM_URL}|${PROBLEM_URL}|g" message.txt
+          sed -i "s|\${PR_URL}|${PR_URL}|g" message.txt
+          
+          # 行頭のインデントを削除
+          sed -i 's/^          //' message.txt
+          
+          # PRにコメントとして投稿
+          gh pr comment "$PR_NUMBER" --body-file message.txt
