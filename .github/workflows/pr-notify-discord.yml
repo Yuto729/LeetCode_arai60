@@ -24,15 +24,22 @@ jobs:
           # PRボディから問題情報を抽出
           PR_BODY=$(gh pr view ${{ github.event.pull_request.number }} --json body -q .body)
           
-          # 2行目から問題情報を取得（## 解く問題の次の行）
-          PROBLEM_LINE=$(echo "$PR_BODY" | sed -n '2p')
+          # "## 解く問題" の次の行から問題情報を取得
+          CURRENT_PROBLEM_LINE=$(echo "$PR_BODY" | grep -A 1 "## 解く問題" | tail -n 1)
           
           # [問題名](URL) の形式から抽出
-          PROBLEM_NAME=$(echo "$PROBLEM_LINE" | sed -n 's/^\[\([^]]*\)\].*/\1/p')
-          PROBLEM_URL=$(echo "$PROBLEM_LINE" | sed -n 's/^[^(]*(\([^)]*\)).*/\1/p')
+          CURRENT_PROBLEM_NAME=$(echo "$CURRENT_PROBLEM_LINE" | sed -n 's/^\[\([^]]*\)\].*/\1/p')
+          CURRENT_PROBLEM_URL=$(echo "$CURRENT_PROBLEM_LINE" | sed -n 's/^[^(]*(\([^)]*\)).*/\1/p')
           
-          echo "problem_name=${PROBLEM_NAME}" >> $GITHUB_OUTPUT
-          echo "problem_url=${PROBLEM_URL}" >> $GITHUB_OUTPUT
+          # "## 次に解く問題" の次の行から次の問題情報を取得
+          NEXT_PROBLEM_LINE=$(echo "$PR_BODY" | grep -A 1 "## 次に解く問題" | tail -n 1)
+          NEXT_PROBLEM_NAME=$(echo "$NEXT_PROBLEM_LINE" | sed -n 's/^\[\([^]]*\)\].*/\1/p')
+          NEXT_PROBLEM_URL=$(echo "$NEXT_PROBLEM_LINE" | sed -n 's/^[^(]*(\([^)]*\)).*/\1/p')
+          
+          echo "problem_name=${CURRENT_PROBLEM_NAME}" >> $GITHUB_OUTPUT
+          echo "problem_url=${CURRENT_PROBLEM_URL}" >> $GITHUB_OUTPUT
+          echo "next_problem_name=${NEXT_PROBLEM_NAME}" >> $GITHUB_OUTPUT
+          echo "next_problem_url=${NEXT_PROBLEM_URL}" >> $GITHUB_OUTPUT
         env:
           GH_TOKEN: ${{ github.token }}
 
@@ -49,13 +56,16 @@ jobs:
           cat << EOF > message.txt
           お疲れ様です。
           
-          ${PROBLEM_NAME}に取り組みました。  
+          ${PROBLEM_NAME}に取り組みました。
           お手隙の際にレビューをお願いいたします。
           
-          問題: ${PROBLEM_URL} 
-          PR: ${PR_URL} 
+          問題: ${PROBLEM_URL}
+          PR: ${PR_URL}
           言語: Python3
           EOF
+          
+          # 行頭のインデントを削除
+          sed -i 's/^          //' message.txt
           
           # PRにコメントとして投稿
           gh pr comment "$PR_NUMBER" --body-file message.txt
