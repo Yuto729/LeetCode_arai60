@@ -9,6 +9,9 @@ on:
 jobs:
   notify:
     runs-on: ubuntu-latest
+    permissions:
+      pull-requests: write
+      contents: read
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -18,13 +21,20 @@ jobs:
       - name: Extract problem info
         id: extract
         run: |
-          # PRテンプレートから問題情報を抽出
-          PROBLEM_LINE=$(sed -n '2p' .github/pull_request_template.md)
-          PROBLEM_NAME=$(echo "$PROBLEM_LINE" | sed -n 's/.*\[\(.*\)\].*/\1/p')
-          PROBLEM_URL=$(echo "$PROBLEM_LINE" | sed -n 's/.*(\(.*\)).*/\1/p')
+          # PRボディから問題情報を抽出
+          PR_BODY=$(gh pr view ${{ github.event.pull_request.number }} --json body -q .body)
+          
+          # 2行目から問題情報を取得（## 解く問題の次の行）
+          PROBLEM_LINE=$(echo "$PR_BODY" | sed -n '2p')
+          
+          # [問題名](URL) の形式から抽出
+          PROBLEM_NAME=$(echo "$PROBLEM_LINE" | sed -n 's/^\[\([^]]*\)\].*/\1/p')
+          PROBLEM_URL=$(echo "$PROBLEM_LINE" | sed -n 's/^[^(]*(\([^)]*\)).*/\1/p')
           
           echo "problem_name=${PROBLEM_NAME}" >> $GITHUB_OUTPUT
           echo "problem_url=${PROBLEM_URL}" >> $GITHUB_OUTPUT
+        env:
+          GH_TOKEN: ${{ github.token }}
 
       - name: Create Discord message and post as PR comment
         env:
@@ -32,12 +42,11 @@ jobs:
         run: |
           PR_NUMBER="${{ github.event.pull_request.number }}"
           PR_URL="${{ github.event.pull_request.html_url }}"
-          PR_AUTHOR="${{ github.event.pull_request.user.login }}"
           PROBLEM_NAME="${{ steps.extract.outputs.problem_name }}"
           PROBLEM_URL="${{ steps.extract.outputs.problem_url }}"
           
           # Discordメッセージを作成
-          cat > message.txt << 'END_OF_MESSAGE'
+          cat << EOF > message.txt
           お疲れ様です。
           
           ${PROBLEM_NAME}に取り組みました。
@@ -49,15 +58,7 @@ jobs:
           PR: ${PR_URL}
           
           言語: Python3
-          END_OF_MESSAGE
-          
-          # 変数を置換
-          sed -i "s|\${PROBLEM_NAME}|${PROBLEM_NAME}|g" message.txt
-          sed -i "s|\${PROBLEM_URL}|${PROBLEM_URL}|g" message.txt
-          sed -i "s|\${PR_URL}|${PR_URL}|g" message.txt
-          
-          # 行頭のインデントを削除
-          sed -i 's/^          //' message.txt
+          EOF
           
           # PRにコメントとして投稿
           gh pr comment "$PR_NUMBER" --body-file message.txt
