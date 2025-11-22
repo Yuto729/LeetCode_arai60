@@ -47,23 +47,13 @@ else
   NEXT_PROBLEM_LINE="[]()"
 fi
 
-# PRテンプレートを更新
-echo "📝 PRテンプレートを更新中..."
+echo "📝 PRボディを作成中..."
 cat > .github/pull_request_template.md << EOF
 ## 解く問題
 [${CURRENT_PROBLEM_TITLE}](${CURRENT_PROBLEM_URL})
 ## 次に解く問題
 ${NEXT_PROBLEM_LINE}
 EOF
-
-git add .github/pull_request_template.md
-
-if git diff --cached --quiet; then
-  echo "ℹ️  PRテンプレートに変更がありません。"
-else
-  echo "💾 変更をコミット中..."
-  git commit -m "Update PR template: ${CURRENT_PROBLEM_TITLE}"
-fi
 
 echo "📤 リモートにプッシュ中..."
 git push -u origin "$CURRENT_BRANCH"
