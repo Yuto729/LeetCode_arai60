@@ -158,3 +158,24 @@ class Solution:
 iterative版 => ポインタを一つずつ進め, 反転済み部分にconcatしながら一つの連結リストを作成する操作. foldl（左畳み込み）に相当する.
 2の再帰（末尾再帰）=> iterative版と同じロジック. 関数間 / ループ間で渡すのはすでに逆順にした部分と残りの部分.
 1の再帰 => ポインタを一つずつ進め, 反転していない前半の部分を反転済みの後半の部分にくっつける操作. すなわちfoldrに相当. 
+
+
+## Step3
+通常の再帰で書く
+```py
+class Solution:
+    def reverseList(self, head: Optional[ListNode]) -> Optional[ListNode]:
+        def reverseListHelper(node):
+            if node.next is None:
+                return node
+
+            new_head = reverseListHelper(node.next)
+            node.next.next = node
+            node.next = None
+
+            return new_head
+        if not head:
+            return head
+
+        return reverseListHelper(head)
+```
