@@ -83,6 +83,17 @@ def countSubarrays(nums, k):
 
 ## Step3
 ```py
+class Solution:
+    def subarraySum(self, nums: List[int], k: int) -> int:
+        cumsum_to_freq = {0:1}
+        total = 0
+        count = 0
+        for num in nums:
+            total += num
+            if total - k in cumsum_to_freq:
+                count += cumsum_to_freq[total - k]
 
-
+            cumsum_to_freq[total] = cumsum_to_freq.get(total, 0) + 1
+        
+        return count
 ```
