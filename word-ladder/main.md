@@ -61,7 +61,7 @@ Runtimeは8000ms超え. 平均より1 ~ 2桁ほど遅いので計算量を1/100 
 - 上記の実装 => 各単語について現在の単語と1文字違いのものを探す => O(N * 10)
 - 発想を転換して, 現在の単語について1文字を別のアルファベットに変えた単語がwordListの中にあるか？を調べる => O(M * 26), M: 各単語の長さ (最大10). 単語を調べるときにsetを用いる.
 
-- 上記のコードで根からの深さの意図で`height`と命名していたが, `distance`や`height`のほうが良さそう
+- 上記のコードで根からの深さの意図で`height`と命名していたが, `distance`や`depth`のほうが良さそう
 ```py
 class Solution:
     def ladderLength(self, beginWord: str, endWord: str, wordList: List[str]) -> int:
