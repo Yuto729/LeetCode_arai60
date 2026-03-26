@@ -65,4 +65,5 @@ gh pr create \
   --title "${CURRENT_PROBLEM_TITLE}" \
   --body-file .github/pull_request_template.md
 
+git restore .github/pull_request_template.md
 echo "✅ PR作成完了！"
