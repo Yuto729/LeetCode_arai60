@@ -149,7 +149,7 @@ class Solution:
                     num_unique_paths_per_row[c] = 0
                     continue
 
-                if c > 0:
+                if c > 0: # c = 0のときはc - 1が存在しないため
                     num_unique_paths_per_row[c] += num_unique_paths_per_row[c - 1]
 
         return num_unique_paths_per_row[num_cols - 1]
