@@ -244,7 +244,7 @@ inner functionのローカル変数はスレッドセーフ
 
 
 ## Step3
-
+- Step1の最後の回答と本質的には同じ
 ```py
 class Solution:
     def rob(self, nums: List[int]) -> int:
