@@ -214,6 +214,52 @@ def buildTree(self, preorder, inorder):
 - [naoto-iwase/leetcode#34](https://github.com/naoto-iwase/leetcode/pull/34) — 実装2で詳しい解説あり
 - [Yoshiki-Iwasa/Arai60#33 step4.rs](https://github.com/Yoshiki-Iwasa/Arai60/pull/33) — Rust実装
 
+#### アルゴリズム（inorder位置をスタックに持つ版）
+
+スタックに `(node, inorderにおける位置)` のペアを積む。
+
+**不変条件**: スタックには「左部分木は完成済みだが、右部分木はまだ未確定」なノードが積まれている。
+
+```python
+def buildTree(preorder, inorder):
+    inorder_pos = {val: i for i, val in enumerate(inorder)}
+
+    root = TreeNode(preorder[0])
+    stack = [(root, inorder_pos[preorder[0]])]
+
+    for i in range(1, len(preorder)):
+        node = TreeNode(preorder[i])
+        cur_pos = inorder_pos[preorder[i]]
+
+        if cur_pos < stack[-1][1]:
+            # 現在のノードはstack.topより左 → 左の子
+            stack[-1][0].left = node
+        else:
+            # 現在のノードはstack.topより右 → popして正しい親を探す
+            last = None
+            while stack and cur_pos > stack[-1][1]:
+                last = stack.pop()
+            last[0].right = node
+
+        stack.append((node, cur_pos))
+
+    return root
+```
+
+**追跡例** (`preorder=[3,9,20,15,7]`, `inorder=[9,3,15,20,7]`):
+```
+inorder_pos = {9:0, 3:1, 15:2, 20:3, 7:4}
+
+root=3(pos=1), stack=[(3,1)]
+
+node=9(pos=0):  cur=0 < top=1 → 3.left=9,   stack=[(3,1),(9,0)]
+node=20(pos=3): cur=3 > top=0 → pop(9,0), 3>1 → pop(3,1), last=(3,1), 3.right=20, stack=[(20,3)]
+node=15(pos=2): cur=2 < top=3 → 20.left=15, stack=[(20,3),(15,2)]
+node=7(pos=4):  cur=4 > top=2 → pop(15,2), 4>3 → pop(20,3), last=(20,3), 20.right=7, stack=[(7,4)]
+```
+
+Time O(n), Space O(n)
+
 ### 変数名など
 - `val` vs `value`: `node.val`に合わせるなら`val`、一般的には`value`が無難
 - `left, right`が何を指すか明確な関数名にすべき
