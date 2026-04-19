@@ -21,6 +21,10 @@ Example 3:
 Input: nums = [1], target = 0
 Output: -1
 
+Example:
+Input: nums = [1,2,3,4,5], target = 1
+Ouput: 0
+
 Constraints:
 - 1 <= nums.length <= 5000
 - -10^4 <= nums[i] <= 10^4
@@ -221,3 +225,32 @@ class Solution:
 - leftより左：targetと違うエリア or nums[i] < target (i < left)
 - right以降：targetと違うエリアか or nums[i] >= target (i >= right)
 left = rightに収束した時の位置は、「述語がFalseになる最初の位置」= 「targetと同じエリアかつ、target以上となる最初の位置、またはtargetと違うエリア」
+
+```py
+class Solution:
+    def search(self, nums: List[int], target: int) -> int:
+        left, right = 0, len(nums)
+        while left < right:
+            mid = (left + right) // 2
+            if nums[mid] < nums[0] and target >= nums[0]:
+                right = mid
+                continue
+
+            if nums[mid] >= nums[0] and target < nums[0]:
+                left = mid + 1
+                continue
+            
+            if nums[mid] < target:
+                left = mid + 1
+                continue
+
+            right = mid
+        
+        if left < len(nums) and nums[left] == target:
+            return left
+        
+        if nums[0] == target:
+            return 0
+        
+        return -1
+```
