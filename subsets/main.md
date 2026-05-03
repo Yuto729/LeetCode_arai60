@@ -118,7 +118,24 @@ class Solution:
 ```
 
 その他の解法
-- bitパターン -> 時間があればやってみる
+- bit mask パターン
+    - n個の要素それぞれに「含める（1）/ 含めない（0）」のbitを割り当てる。0から2^n - 1までの整数をbit列として解釈すれば、全2^n通りの組み合わせを列挙できる
+```py
+class Solution:
+    def subsets(self, nums: List[int]) -> List[List[int]]:
+        n = len(nums)
+        result = []
+        # 0 ~ 2^n - 1
+        for mask in range(1 << n):
+            subset = []
+            for i in range(n):
+                # i桁目が1である
+                if mask >> i & 1:
+                    subset.append(nums[i])
+            result.append(subset)
+
+        return result
+```
 
 Follow-up                                                   
 - nums に重複がある場合（Subsets II, LC 90）はどう拡張しますか？
