@@ -109,7 +109,7 @@ for read in range(len(nums)):
     if nums[read] != 0:
         # ガード
         if write != read:
-            あふぁ
+          ...
 ```
 Follow up: Could you minimize the total number of operations done? への回答
 - Two pointerが操作回数最小になる。書き込み回数2k (k = 非ゼロの個数)になる。
