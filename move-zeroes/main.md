@@ -103,6 +103,17 @@ class Solution:
                 nums[read], nums[write] = nums[write], nums[read]
                 write += 1
 ```
+- 最初のゼロが出てくるまで、同じ位置同士でswapを行なってしまうので、以下のガードをつけると良い
+```py
+for read in range(len(nums)):
+    if nums[read] != 0:
+        # ガード
+        if write != read:
+            あふぁ
+```
+Follow up: Could you minimize the total number of operations done? への回答
+- Two pointerが操作回数最小になる。書き込み回数2k (k = 非ゼロの個数)になる。
+最悪ケース（[0,0,0,....,1,2,3,...k]のようなケース）で書き込み 2k が下界
 
 Two Pass
 1回目で非ゼロを前に詰める -> 2回目で残りを0埋めする
@@ -199,7 +210,20 @@ https://github.com/hroc135/leetcode/pull/51#discussion_r2052911267
 配列の `pop(i)` は O(n) だが、Linked Listのノード移動は O(1)。アルゴリズム的には同じでも基盤データ構造の選択でオーダーが変わる。
 
 ## Step3
-
+Two Passで練習をする
+```Py
+class Solution:
+    def moveZeroes(self, nums: List[int]) -> None:
+        # 不変条件: nums[:write]はすべて非ゼロ
+        write = 0
+        for num in nums:
+            if num != 0:
+                nums[write] = num
+                write += 1
+            
+        # この時点でnums[write]はゼロと非ゼロの境界で、初めてゼロになるところ
+        nums[write:] = [0] * (len(nums) - write)
+```
 
 ### 類題
 
