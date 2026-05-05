@@ -179,7 +179,7 @@ https://github.com/yas-2023/leetcode_arai60/pull/19/changes#r2442539560
 class Solution:
     def countComponents(self, n: int, edges: List[List[int]]) -> int:
         def traverse_graph(start):
-            node_to_visite = [start]
+            node_to_visit = [start]
             visited.add(start)
             while node_to_visite:
                 node = node_to_visite.pop()
