@@ -1,42 +1,108 @@
----
-name: export-pr-review
-description: GitHub PRのdiffとコメントを1ファイルにエクスポートするスキル。ローカルでPRレビュー内容を確認したいときに使用する。「PRをエクスポートして」「このPRのdiffとコメントをまとめて」「PRレビュー内容をファイルに出力して」などのリクエストで発動。明示的に /export-pr-review でも呼び出し可能。
----
+#!/usr/bin/env bash
+# export-pr.sh: GitHub PRのdiff + コメントを1ファイルにまとめる
+# Usage: export-pr.sh <PR_URL> [PR_URL ...]
 
-# Export PR Review
+set -euo pipefail
 
-GitHub PRのdiff・インラインコメント・レビューサマリー・会話コメントを1つのMarkdownファイルにまとめて出力する。
+OUTPUT_FILE="${EXPORT_PR_OUTPUT:-/tmp/pr-review-$(date +%Y%m%d-%H%M%S).md}"
 
-## 使い方
+parse_pr_url() {
+  local url="$1"
+  # https://github.com/owner/repo/pull/123 形式をパース
+  if [[ "$url" =~ github\.com/([^/]+)/([^/]+)/pull/([0-9]+) ]]; then
+    OWNER="${BASH_REMATCH[1]}"
+    REPO="${BASH_REMATCH[2]}"
+    PR_NUM="${BASH_REMATCH[3]}"
+  else
+    echo "ERROR: URLの形式が不正です: $url" >&2
+    return 1
+  fi
+}
 
-ユーザーからPR URLを受け取り、以下のスクリプトを実行する。
+export_pr() {
+  local url="$1"
+  parse_pr_url "$url"
 
-$()$(
-  bash
-  bash export-pr.sh ...] <PR_URL >[PR_URL
-)$()
+  local repo="$OWNER/$REPO"
 
-$(export-pr.sh) はこの skill ディレクトリ内の同梱スクリプトを使う。
+  echo "## PR #$PR_NUM — $repo"
+  echo
+  echo "> $url"
+  echo
 
-## 出力
+  # PR概要
+  echo "### Overview"
+  echo '```'
+  gh pr view "$PR_NUM" --repo "$repo" 2>/dev/null || echo "(PR情報取得失敗)"
+  echo '```'
+  echo
 
-- 出力先: $(/tmp/pr-review-YYYYMMDD-HHMMSS.md)（デフォルト）
-- 環境変数 $(EXPORT_PR_OUTPUT) でパスを上書き可能
+  # Inline review comments (コード行に紐づく)
+  echo "### Inline Review Comments"
+  local inline
+  inline=$(gh api "repos/$repo/pulls/$PR_NUM/comments" \
+    --jq '.[] | "#### \(.path) (line \(.line // .original_line // "?"))\n**[\(.user.login)]** \(.created_at | split("T")[0])\n\n\(.body)\n"' \
+    2>/dev/null)
+  if [[ -n "$inline" ]]; then
+    echo "$inline"
+  else
+    echo "_なし_"
+  fi
+  echo
 
-## 出力内容（PR毎）
+  # Review summaries (LGTM, Request changes等のサマリーコメント)
+  echo "### Review Summaries"
+  local reviews
+  reviews=$(gh api "repos/$repo/pulls/$PR_NUM/reviews" \
+    --jq '.[] | select(.body != "") | "#### \(.user.login) [\(.state)] \(.submitted_at | split("T")[0])\n\n\(.body)\n"' \
+    2>/dev/null)
+  if [[ -n "$reviews" ]]; then
+    echo "$reviews"
+  else
+    echo "_なし_"
+  fi
+  echo
 
-1. **Overview** - $(gh pr view) の結果（タイトル・状態・作成者等）
-2. **Inline Review Comments** - コードの特定行に紐づくコメント
-3. **Review Summaries** - LGTM / Request Changes等のレビューサマリー
-4. **Conversation Comments** - PRスレッドの会話
-5. **Diff** - unified diff形式
+  # Conversation comments (PRスレッドの会話)
+  echo "### Conversation Comments"
+  local conv
+  conv=$(gh api "repos/$repo/issues/$PR_NUM/comments" \
+    --jq '.[] | "#### \(.user.login) \(.created_at | split("T")[0])\n\n\(.body)\n"' \
+    2>/dev/null)
+  if [[ -n "$conv" ]]; then
+    echo "$conv"
+  else
+    echo "_なし_"
+  fi
+  echo
 
-## 実行後
+  # Diff
+  echo "### Diff"
+  echo '```diff'
+  gh pr diff "$PR_NUM" --repo "$repo" 2>/dev/null || echo "(diff取得失敗)"
+  echo '```'
+  echo
+  echo "---"
+  echo
+}
 
-スクリプトが出力ファイルのパスを stdout に返すので、そのパスをユーザーに伝える。
-必要であればファイルの内容をReadして要約・分析する。
+# メイン
+if [[ $# -eq 0 ]]; then
+  echo "Usage: $0 <PR_URL> [PR_URL ...]" >&2
+  exit 1
+fi
 
-## 注意
+{
+  echo "# PR Review Export"
+  echo
+  echo "_Generated: $(date '+%Y-%m-%d %H:%M:%S')_"
+  echo
+  echo "---"
+  echo
 
-- $(gh) CLIが認証済みである必要がある（$(gh auth status) で確認）
-- プライベートリポジトリはアクセス権が必要
+  for url in "$@"; do
+    export_pr "$url"
+  done
+} > "$OUTPUT_FILE"
+
+echo "$OUTPUT_FILE"
